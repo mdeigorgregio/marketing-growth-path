@@ -14,7 +14,157 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_time: string
+          id: string
+          project_id: string
+          start_time: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_time: string
+          id?: string
+          project_id: string
+          start_time: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          id?: string
+          project_id?: string
+          start_time?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          project_id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          created_at: string
+          email: string | null
+          empresa: string
+          estado: string | null
+          id: string
+          numero: string | null
+          origem: Database["public"]["Enums"]["project_origin"] | null
+          plano_escolhido: string | null
+          responsavel: string
+          rua: string | null
+          servicos_avulsos: Json | null
+          site: string | null
+          status: Database["public"]["Enums"]["project_status"] | null
+          telefone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          empresa: string
+          estado?: string | null
+          id?: string
+          numero?: string | null
+          origem?: Database["public"]["Enums"]["project_origin"] | null
+          plano_escolhido?: string | null
+          responsavel: string
+          rua?: string | null
+          servicos_avulsos?: Json | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          telefone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          created_at?: string
+          email?: string | null
+          empresa?: string
+          estado?: string | null
+          id?: string
+          numero?: string | null
+          origem?: Database["public"]["Enums"]["project_origin"] | null
+          plano_escolhido?: string | null
+          responsavel?: string
+          rua?: string | null
+          servicos_avulsos?: Json | null
+          site?: string | null
+          status?: Database["public"]["Enums"]["project_status"] | null
+          telefone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +173,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      project_origin: "Tráfego Pago" | "LA Educação" | "Orgânico" | "Indicação"
+      project_status: "LEAD" | "Assinante" | "Inadimplente" | "Cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +301,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      project_origin: ["Tráfego Pago", "LA Educação", "Orgânico", "Indicação"],
+      project_status: ["LEAD", "Assinante", "Inadimplente", "Cancelado"],
+    },
   },
 } as const
