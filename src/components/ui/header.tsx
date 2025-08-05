@@ -10,7 +10,7 @@ export const Header = () => {
           <span className="text-xl font-bold">Sistema MDE</span>
         </div>
         
-        <Button variant="default" className="shadow-elegant">
+        <Button variant="default" className="shadow-elegant" onClick={() => window.location.href = '/auth'}>
           Login
         </Button>
       </div>

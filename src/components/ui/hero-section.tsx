@@ -18,7 +18,7 @@ export const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" className="text-lg px-8 py-6 shadow-elegant">
+            <Button size="lg" className="text-lg px-8 py-6 shadow-elegant" onClick={() => window.location.href = '/auth'}>
               Começar Agora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
