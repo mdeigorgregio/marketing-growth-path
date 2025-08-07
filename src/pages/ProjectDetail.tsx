@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { NotesSection } from '@/components/NotesSection';
+import { AppointmentsSection } from '@/components/AppointmentsSection';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ProjectDetail = () => {
   const navigate = useNavigate();
@@ -330,6 +333,93 @@ const ProjectDetail = () => {
             </Card>
           </div>
         </div>
+
+        <Tabs defaultValue="info" className="mt-8">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="info">Informações</TabsTrigger>
+            <TabsTrigger value="notes">Notas</TabsTrigger>
+            <TabsTrigger value="appointments">Agendamentos</TabsTrigger>
+            <TabsTrigger value="status">Status</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="info" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Informações Financeiras</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Plano:</span>
+                      <span className="font-medium">{project.plano_escolhido || 'Não informado'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Serviços Avulsos:</span>
+                      <span className="text-sm text-muted-foreground">
+                        {Array.isArray(project.servicos_avulsos) && project.servicos_avulsos.length > 0 
+                          ? `${project.servicos_avulsos.length} item(s)` 
+                          : 'Nenhum'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Origem do Lead</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span>Origem:</span>
+                      <Badge variant="outline">{project.origem || 'Não informado'}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="notes">
+            <NotesSection projectId={project.id} />
+          </TabsContent>
+          
+          <TabsContent value="appointments">
+            <AppointmentsSection projectId={project.id} />
+          </TabsContent>
+          
+          <TabsContent value="status">
+            <Card>
+              <CardHeader>
+                <CardTitle>Status do Projeto</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Status:</span>
+                    <Badge className={getStatusColor(project.status)}>
+                      {project.status}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Criado em:</span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(project.created_at).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Última atualização:</span>
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(project.updated_at).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

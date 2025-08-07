@@ -24,11 +24,15 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ProjectStatus } from '@/hooks/useProjects';
+import { useUserRole } from '@/hooks/useAuth';
+import { AdminPanel } from '@/components/AdminPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { data: projects, isLoading } = useProjects();
   const navigate = useNavigate();
+  const { data: userRole } = useUserRole();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
 
@@ -105,7 +109,7 @@ const Dashboard = () => {
           <div className="flex items-center space-x-4">
             <Button onClick={() => navigate('/dashboard/projects/new')} className="shadow-elegant">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Projeto
+              Novo Negócio
             </Button>
             
             <DropdownMenu>
@@ -138,191 +142,208 @@ const Dashboard = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Projetos</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="projects" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="projects">Projetos</TabsTrigger>
+            {userRole?.role === 'admin' && (
+              <TabsTrigger value="admin">Administração</TabsTrigger>
+            )}
+          </TabsList>
           
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Leads</CardTitle>
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                {stats.leads}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">{stats.leads}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Assinantes</CardTitle>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {stats.assinantes}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.assinantes}</div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Inadimplentes</CardTitle>
-              <Badge variant="secondary" className="bg-red-100 text-red-800">
-                {stats.inadimplentes}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.inadimplentes}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por empresa ou responsável..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtrar por Status
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-                Todos
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('LEAD')}>
-                LEAD
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Assinante')}>
-                Assinante
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Inadimplente')}>
-                Inadimplente
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setStatusFilter('Cancelado')}>
-                Cancelado
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects?.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum projeto encontrado</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm || statusFilter !== 'all' 
-                  ? 'Tente ajustar os filtros de busca.'
-                  : 'Comece criando seu primeiro projeto.'}
-              </p>
-              <Button onClick={() => navigate('/dashboard/projects/new')}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Projeto
-              </Button>
-            </div>
-          ) : (
-            filteredProjects?.map((project) => (
-              <Card 
-                key={project.id} 
-                className="shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer"
-                onClick={() => navigate(`/dashboard/projects/${project.id}`)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg">{project.empresa}</CardTitle>
-                      <CardDescription className="flex items-center mt-1">
-                        <User className="h-4 w-4 mr-1" />
-                        {project.responsavel}
-                      </CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getStatusColor(project.status)}>
-                        {project.status}
-                      </Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/projects/${project.id}/edit`);
-                          }}>
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/projects/${project.id}/notes`);
-                          }}>
-                            Ver Notas
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/dashboard/projects/${project.id}/appointments`);
-                          }}>
-                            Ver Agendamentos
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
+          <TabsContent value="projects" className="space-y-8">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Projetos</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    {project.telefone && (
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Phone className="h-4 w-4 mr-2" />
-                        {project.telefone}
-                      </div>
-                    )}
-                    {project.email && (
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Mail className="h-4 w-4 mr-2" />
-                        {project.email}
-                      </div>
-                    )}
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Criado em {new Date(project.created_at).toLocaleDateString('pt-BR')}
-                    </div>
-                    {project.plano_escolhido && (
-                      <div className="mt-2">
-                        <Badge variant="outline">
-                          {project.plano_escolhido}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                  <div className="text-2xl font-bold">{stats.total}</div>
                 </CardContent>
               </Card>
-            ))
+              
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Leads</CardTitle>
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                    {stats.leads}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">{stats.leads}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Assinantes</CardTitle>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    {stats.assinantes}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">{stats.assinantes}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Inadimplentes</CardTitle>
+                  <Badge variant="secondary" className="bg-red-100 text-red-800">
+                    {stats.inadimplentes}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600">{stats.inadimplentes}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Search and Filters */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por empresa ou responsável..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtrar por Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setStatusFilter('all')}>
+                    Todos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('LEAD')}>
+                    LEAD
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('Assinante')}>
+                    Assinante
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('Inadimplente')}>
+                    Inadimplente
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setStatusFilter('Cancelado')}>
+                    Cancelado
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Projects Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects?.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <Building2 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Nenhum projeto encontrado</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm || statusFilter !== 'all' 
+                      ? 'Tente ajustar os filtros de busca.'
+                      : 'Comece criando seu primeiro projeto.'}
+                  </p>
+                  <Button onClick={() => navigate('/dashboard/projects/new')}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Primeiro Projeto
+                  </Button>
+                </div>
+              ) : (
+                filteredProjects?.map((project) => (
+                  <Card 
+                    key={project.id} 
+                    className="shadow-card hover:shadow-elegant transition-all duration-300 cursor-pointer"
+                    onClick={() => navigate(`/dashboard/projects/${project.id}`)}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{project.empresa}</CardTitle>
+                          <CardDescription className="flex items-center mt-1">
+                            <User className="h-4 w-4 mr-1" />
+                            {project.responsavel}
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getStatusColor(project.status)}>
+                            {project.status}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/projects/${project.id}/edit`);
+                              }}>
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/projects/${project.id}/notes`);
+                              }}>
+                                Ver Notas
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/dashboard/projects/${project.id}/appointments`);
+                              }}>
+                                Ver Agendamentos
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {project.telefone && (
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Phone className="h-4 w-4 mr-2" />
+                            {project.telefone}
+                          </div>
+                        )}
+                        {project.email && (
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Mail className="h-4 w-4 mr-2" />
+                            {project.email}
+                          </div>
+                        )}
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Criado em {new Date(project.created_at).toLocaleDateString('pt-BR')}
+                        </div>
+                        {project.plano_escolhido && (
+                          <div className="mt-2">
+                            <Badge variant="outline">
+                              {project.plano_escolhido}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+          
+          {userRole?.role === 'admin' && (
+            <TabsContent value="admin">
+              <AdminPanel />
+            </TabsContent>
           )}
-        </div>
+        </Tabs>
       </div>
     </div>
   );
