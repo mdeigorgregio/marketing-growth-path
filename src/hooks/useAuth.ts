@@ -1,19 +1,19 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export interface UserRole {
   id: string;
   user_id: string;
-  role: 'admin' | 'user';
+  role: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO';
   created_at: string;
 }
 
 export interface UserProfile {
   id: string;
-  user_id: string;
-  display_name?: string;
   email?: string;
+  nome_completo?: string;
+  role: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO';
   created_at: string;
   updated_at: string;
 }
@@ -27,13 +27,13 @@ export const useUserRole = () => {
       if (!user) return null;
       
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', user.id)
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
-      return data as UserRole;
+      return { role: data.role } as { role: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO' };
     },
     enabled: !!user,
   });
@@ -50,7 +50,7 @@ export const useUserProfile = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
@@ -67,22 +67,46 @@ export const useAllUsers = () => {
   return useQuery({
     queryKey: ['allUsers'],
     queryFn: async () => {
-      if (!user || userRole?.role !== 'admin') {
+      if (!user || userRole?.role !== 'ADMINISTRADOR') {
         throw new Error('Acesso negado: apenas administradores podem ver todos os usuários');
       }
       
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles (
-            role
-          )
-        `);
+        .select('*');
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user && userRole?.role === 'admin',
+    enabled: !!user && userRole?.role === 'ADMINISTRADOR',
+  });
+};
+
+// Hook para atualizar role de usuário (apenas para admins)
+export const useUpdateUserRole = () => {
+  const { user } = useAuth();
+  const { data: userRole } = useUserRole();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO' }) => {
+      if (!user || userRole?.role !== 'ADMINISTRADOR') {
+        throw new Error('Acesso negado: apenas administradores podem alterar roles');
+      }
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['userRole'] });
+    },
   });
 };

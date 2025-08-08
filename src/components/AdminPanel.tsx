@@ -4,18 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Users, Search, UserCheck } from 'lucide-react';
-import { useAllUsers, useUserRole } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAllUsers, useUserRole, useUpdateUserRole } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { data: currentUserRole } = useUserRole();
-  const { data: allUsers, refetch } = useAllUsers();
+  const { data: allUsers } = useAllUsers();
+  const updateUserRole = useUpdateUserRole();
   const { toast } = useToast();
 
-  if (currentUserRole?.role !== 'admin') {
+  if (currentUserRole?.role !== 'ADMINISTRADOR') {
     return (
       <div className="text-center py-8">
         <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -26,25 +26,15 @@ export const AdminPanel = () => {
   }
 
   const filteredUsers = allUsers?.filter(user =>
-    user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    user.id?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  const toggleUserRole = async (userId: string, currentRole: 'admin' | 'user') => {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    
+  const handleRoleChange = async (userId: string, newRole: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO') => {
     try {
-      const { error } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-
-      await refetch();
+      await updateUserRole.mutateAsync({ userId, newRole });
       toast({
         title: "Sucesso",
-        description: `Usuário ${newRole === 'admin' ? 'promovido a' : 'removido de'} administrador`,
+        description: `Role do usuário alterada para ${newRole}`,
       });
     } catch (error) {
       toast({
@@ -52,6 +42,30 @@ export const AdminPanel = () => {
         description: "Erro ao alterar papel do usuário",
         variant: "destructive",
       });
+    }
+  };
+
+  const getRoleBadgeVariant = (role: string) => {
+    switch (role) {
+      case 'ADMINISTRADOR':
+        return 'default';
+      case 'EDITOR':
+        return 'secondary';
+      case 'USUARIO':
+      default:
+        return 'outline';
+    }
+  };
+
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'ADMINISTRADOR':
+        return 'Administrador';
+      case 'EDITOR':
+        return 'Editor';
+      case 'USUARIO':
+      default:
+        return 'Usuário';
     }
   };
 
@@ -86,22 +100,31 @@ export const AdminPanel = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="font-medium">{user.display_name || 'Sem nome'}</p>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="font-medium">{user.id}</p>
+                      <p className="text-sm text-muted-foreground">ID: {user.id}</p>
                     </div>
-                    <Badge variant={user.user_roles?.[0]?.role === 'admin' ? 'default' : 'secondary'}>
-                      {user.user_roles?.[0]?.role === 'admin' ? 'Admin' : 'Usuário'}
+                    <Badge variant={getRoleBadgeVariant(user.role || 'USUARIO')}>
+                      {getRoleDisplayName(user.role || 'USUARIO')}
                     </Badge>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleUserRole(user.user_id, (user.user_roles?.[0]?.role as 'admin' | 'user') || 'user')}
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  {user.user_roles?.[0]?.role === 'admin' ? 'Remover Admin' : 'Tornar Admin'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={user.role || 'USUARIO'}
+                    onValueChange={(newRole: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO') => 
+                      handleRoleChange(user.id, newRole)
+                    }
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USUARIO">Usuário</SelectItem>
+                      <SelectItem value="EDITOR">Editor</SelectItem>
+                      <SelectItem value="ADMINISTRADOR">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
+import { useUserRole } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,22 +20,38 @@ import {
   User,
   Settings,
   LogOut,
-  BookOpen
+  BookOpen,
+  FileText,
+  Kanban,
+  BarChart3
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ProjectStatus } from '@/hooks/useProjects';
-import { useUserRole } from '@/hooks/useAuth';
 import { AdminPanel } from '@/components/AdminPanel';
+import { ServicesSection } from '@/components/ServicesSection';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SalesFunnelChart from '@/components/charts/SalesFunnelChart';
+import RevenuePieChart from '@/components/charts/RevenuePieChart';
+import TrafficSourceChart from '@/components/charts/TrafficSourceChart';
+import GrowthTimelineChart from '@/components/charts/GrowthTimelineChart';
+import ExportData from '@/components/exports/ExportData';
+import {
+  calculateSalesFunnelData,
+  calculateRevenueByPlan,
+  calculateTrafficSourceData,
+  calculateGrowthTimeline
+} from '@/utils/calculations/chartCalculations';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { data: projects, isLoading } = useProjects();
-  const navigate = useNavigate();
   const { data: userRole } = useUserRole();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  
+  const isAdmin = userRole?.role === 'ADMINISTRADOR';
 
   const filteredProjects = projects?.filter(project => {
     const matchesSearch = project.empresa.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -48,7 +65,7 @@ const Dashboard = () => {
       await signOut();
       toast({
         title: 'Logout realizado',
-        description: 'Você foi desconectado com sucesso.',
+        description: 'Voce foi desconectado com sucesso.',
       });
       navigate('/');
     } catch (error) {
@@ -86,6 +103,23 @@ const Dashboard = () => {
     };
   };
 
+  // Dados para os graficos
+  const chartData = useMemo(() => {
+    if (!projects) return {
+      salesFunnel: [],
+      revenue: { data: [], total: 0 },
+      trafficSource: { data: [], total: 0 },
+      growth: []
+    };
+
+    return {
+      salesFunnel: calculateSalesFunnelData(projects),
+      revenue: calculateRevenueByPlan(projects),
+      trafficSource: calculateTrafficSourceData(projects),
+      growth: calculateGrowthTimeline(projects)
+    };
+  }, [projects]);
+
   const stats = getProjectStats();
 
   if (isLoading) {
@@ -109,7 +143,7 @@ const Dashboard = () => {
           <div className="flex items-center space-x-4">
             <Button onClick={() => navigate('/dashboard/projects/new')} className="shadow-elegant">
               <Plus className="h-4 w-4 mr-2" />
-              Novo Negócio
+              Novo Negocio
             </Button>
             
             <DropdownMenu>
@@ -129,7 +163,7 @@ const Dashboard = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Configurações</span>
+                  <span>Configuracoes</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -143,61 +177,44 @@ const Dashboard = () => {
 
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue="projects" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-5'}`}>
             <TabsTrigger value="projects">Projetos</TabsTrigger>
-            {userRole?.role === 'admin' && (
-              <TabsTrigger value="admin">Administração</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="notes">Notas</TabsTrigger>
+            <TabsTrigger value="services">Serviços</TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="admin">Gerenciar Usuarios</TabsTrigger>
+                <TabsTrigger value="settings">Configuracoes</TabsTrigger>
+              </>
             )}
           </TabsList>
           
           <TabsContent value="projects" className="space-y-8">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Projetos</CardTitle>
-                  <Building2 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.total}</div>
-                </CardContent>
-              </Card>
+            {/* Charts Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <SalesFunnelChart 
+                data={chartData.salesFunnel} 
+                isLoading={isLoading}
+              />
               
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Leads</CardTitle>
-                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                    {stats.leads}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.leads}</div>
-                </CardContent>
-              </Card>
+              <RevenuePieChart 
+                data={chartData.revenue.data}
+                total={chartData.revenue.total}
+                isLoading={isLoading}
+              />
               
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Assinantes</CardTitle>
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    {stats.assinantes}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{stats.assinantes}</div>
-                </CardContent>
-              </Card>
+              <TrafficSourceChart 
+                data={chartData.trafficSource.data}
+                total={chartData.trafficSource.total}
+                isLoading={isLoading}
+              />
               
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Inadimplentes</CardTitle>
-                  <Badge variant="secondary" className="bg-red-100 text-red-800">
-                    {stats.inadimplentes}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{stats.inadimplentes}</div>
-                </CardContent>
-              </Card>
+              <GrowthTimelineChart 
+                data={chartData.growth}
+                isLoading={isLoading}
+              />
             </div>
 
             {/* Search and Filters */}
@@ -205,38 +222,42 @@ const Dashboard = () => {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por empresa ou responsável..."
+                  placeholder="Buscar por empresa ou responsavel..."
                   className="pl-10"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
-                    <Filter className="h-4 w-4 mr-2" />
-                    Filtrar por Status
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-                    Todos
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter('LEAD')}>
-                    LEAD
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter('Assinante')}>
-                    Assinante
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter('Inadimplente')}>
-                    Inadimplente
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setStatusFilter('Cancelado')}>
-                    Cancelado
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Filtrar por Status
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setStatusFilter('all')}>
+                      Todos
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('LEAD')}>
+                      LEAD
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('Assinante')}>
+                      Assinante
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('Inadimplente')}>
+                      Inadimplente
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('Cancelado')}>
+                      Cancelado
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <ExportData />
+              </div>
             </div>
 
             {/* Projects Grid */}
@@ -338,10 +359,183 @@ const Dashboard = () => {
             </div>
           </TabsContent>
           
-          {userRole?.role === 'admin' && (
-            <TabsContent value="admin">
-              <AdminPanel />
-            </TabsContent>
+          <TabsContent value="analytics" className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Analytics Avancado
+                </CardTitle>
+                <CardDescription>
+                  Analise detalhada de performance, KPIs e metricas de crescimento.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    Acesse a pagina de Analytics para visualizar relatorios detalhados e insights avancados.
+                  </p>
+                  <Button onClick={() => navigate('/dashboard/analytics')} className="shadow-elegant">
+                    <BarChart3 className="h-4 w-4 mr-2" />
+                    Ir para Analytics
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="pipeline" className="space-y-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Kanban className="h-5 w-5" />
+                  Pipeline de Vendas
+                </CardTitle>
+                <CardDescription>
+                  Visualizacao em Kanban do funil de vendas com drag & drop.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    Gerencie seu pipeline de vendas com uma interface visual intuitiva.
+                  </p>
+                  <Button onClick={() => navigate('/dashboard/pipeline')} className="shadow-elegant">
+                    <Kanban className="h-4 w-4 mr-2" />
+                    Ir para Pipeline
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="notes" className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Todas as Notas</h2>
+                <p className="text-muted-foreground">
+                  Visualize e gerencie todas as suas notas em um so lugar
+                </p>
+              </div>
+              <Button onClick={() => navigate('/dashboard/notes')} className="shadow-elegant">
+                <FileText className="h-4 w-4 mr-2" />
+                Ver Todas as Notas
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Notas</CardTitle>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">12</div>
+                  <p className="text-xs text-muted-foreground">
+                    Distribuidas em {stats.total} projetos
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Notas Recentes</CardTitle>
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">3</div>
+                  <p className="text-xs text-muted-foreground">
+                    Criadas nos ultimos 7 dias
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Projetos com Notas</CardTitle>
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">8</div>
+                  <p className="text-xs text-muted-foreground">
+                    De {stats.total} projetos totais
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Notas Recentes</CardTitle>
+                <CardDescription>
+                  Suas ultimas anotacoes em todos os projetos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">Reuniao inicial com cliente</h4>
+                      <p className="text-sm text-muted-foreground">Tech Solutions - Ha 2 dias</p>
+                      <p className="text-sm mt-1">Discussao sobre requisitos do projeto e cronograma inicial...</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">Analise de concorrencia</h4>
+                      <p className="text-sm text-muted-foreground">Joao Silva - Ha 3 dias</p>
+                      <p className="text-sm mt-1">Pesquisa detalhada sobre concorrentes diretos e indiretos...</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">Feedback do prototipo</h4>
+                      <p className="text-sm text-muted-foreground">Tech Solutions - Ha 4 dias</p>
+                      <p className="text-sm mt-1">Cliente aprovou o design geral, mas solicitou ajustes...</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 text-center">
+                  <Button variant="outline" onClick={() => navigate('/dashboard/notes')}>
+                    Ver Todas as Notas
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="services">
+            <ServicesSection />
+          </TabsContent>
+          
+          {isAdmin && (
+            <>
+              <TabsContent value="admin">
+                <AdminPanel />
+              </TabsContent>
+              
+              <TabsContent value="settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Configuracoes do Sistema</CardTitle>
+                    <CardDescription>
+                      Configuracoes gerais do sistema disponiveis apenas para administradores.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      Funcionalidades de configuracao serao implementadas em breve.
+                    </p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </>
           )}
         </Tabs>
       </div>

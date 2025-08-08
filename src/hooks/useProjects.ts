@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from './useAuth';
+import { mockProjects, shouldUseMockData } from '@/data/mockData';
 
-export type ProjectStatus = 'LEAD' | 'Assinante' | 'Inadimplente' | 'Cancelado';
-export type ProjectOrigin = 'Tráfego Pago' | 'LA Educação' | 'Orgânico' | 'Indicação';
+export type ClienteStatus = 'LEAD' | 'Assinante' | 'Inadimplente' | 'Cancelado';
+export type ClienteOrigin = 'Tráfego Pago' | 'LA Educação' | 'Orgânico' | 'Indicação';
 
-export interface Project {
+export interface Cliente {
   id: string;
   user_id: string;
   empresa: string;
@@ -19,23 +21,33 @@ export interface Project {
   cidade?: string;
   estado?: string;
   cep?: string;
-  status: ProjectStatus;
+  status: ClienteStatus;
   plano_escolhido?: string;
   servicos_avulsos?: any[];
-  origem?: ProjectOrigin;
+  origem?: ClienteOrigin;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateProjectData extends Omit<Project, 'id' | 'user_id' | 'created_at' | 'updated_at'> {}
+export interface CreateClienteData extends Omit<Cliente, 'id' | 'user_id' | 'created_at' | 'updated_at'> {}
+
+// Manter compatibilidade com código existente
+export type ProjectStatus = ClienteStatus;
+export type ProjectOrigin = ClienteOrigin;
+export type Project = Cliente;
+export type CreateProjectData = CreateClienteData;
 
 export const useProjects = () => {
   const { user } = useAuth();
+  const { data: userRole } = useUserRole();
   
   return useQuery({
     queryKey: ['projects', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('Usuário não autenticado');
+      // Se deve usar dados mockados ou não há usuário autenticado
+      if (shouldUseMockData() || !user) {
+        return mockProjects;
+      }
       
       const { data, error } = await supabase
         .from('projects')
@@ -44,17 +56,20 @@ export const useProjects = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as Project[];
+      return data as Cliente[];
     },
     enabled: !!user,
   });
 };
 
+// Manter compatibilidade
+export const useClientes = useProjects;
+
 export const useProject = (projectId: string) => {
   const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['project', projectId],
+    queryKey: ['project', projectId, user?.id],
     queryFn: async () => {
       if (!user) throw new Error('Usuário não autenticado');
       
@@ -66,28 +81,31 @@ export const useProject = (projectId: string) => {
         .single();
 
       if (error) throw error;
-      return data as Project;
+      return data as Cliente;
     },
     enabled: !!user && !!projectId,
   });
 };
+
+// Manter compatibilidade
+export const useCliente = useProject;
 
 export const useCreateProject = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (projectData: CreateProjectData) => {
+    mutationFn: async (clienteData: CreateClienteData) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ ...projectData, user_id: user.id }])
+        .insert([{ ...clienteData, user_id: user.id }])
         .select()
         .single();
 
       if (error) throw error;
-      return data as Project;
+      return data as Cliente;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -95,12 +113,15 @@ export const useCreateProject = () => {
   });
 };
 
+// Manter compatibilidade
+export const useCreateCliente = useCreateProject;
+
 export const useUpdateProject = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateProjectData> }) => {
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<CreateClienteData> }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
@@ -112,27 +133,29 @@ export const useUpdateProject = () => {
         .single();
 
       if (error) throw error;
-      return data as Project;
+      return data as Cliente;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      queryClient.invalidateQueries({ queryKey: ['project', data.id] });
     },
   });
 };
+
+// Manter compatibilidade
+export const useUpdateCliente = useUpdateProject;
 
 export const useDeleteProject = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (projectId: string) => {
+    mutationFn: async (clienteId: string) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', projectId)
+        .eq('id', clienteId)
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -142,3 +165,6 @@ export const useDeleteProject = () => {
     },
   });
 };
+
+// Manter compatibilidade
+export const useDeleteCliente = useDeleteProject;

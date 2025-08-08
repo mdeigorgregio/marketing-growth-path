@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { mockNotes, shouldUseMockData } from '@/data/mockData';
 
 export interface Note {
   id: string;
-  project_id: string;
+  cliente_id: string;
   user_id: string;
   title: string;
   content?: string;
@@ -15,21 +16,49 @@ export interface Note {
 
 export interface CreateNoteData extends Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'> {}
 
-export const useNotes = (projectId?: string) => {
+// Manter compatibilidade
+export interface NoteCompat {
+  id: string;
+  project_id: string;
+  user_id: string;
+  title: string;
+  content?: string;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export const useNotes = (clienteId?: string) => {
   const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['notes', projectId, user?.id],
+    queryKey: ['notes', clienteId, user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('Usuário não autenticado');
+      // Se deve usar dados mockados ou não há usuário autenticado
+      if (shouldUseMockData() || !user) {
+        let filteredNotes = mockNotes;
+        if (clienteId) {
+          filteredNotes = mockNotes.filter(note => note.project_id === clienteId);
+        }
+        // Converter para o formato esperado
+        return filteredNotes.map(note => ({
+          id: note.id,
+          cliente_id: note.project_id,
+          user_id: note.user_id,
+          title: note.titulo,
+          content: note.conteudo,
+          tags: [note.tipo],
+          created_at: note.created_at,
+          updated_at: note.updated_at
+        })) as Note[];
+      }
       
       let query = supabase
         .from('notes')
-        .select('*')
-        .eq('user_id', user.id);
+        .select('*');
 
-      if (projectId) {
-        query = query.eq('project_id', projectId);
+      if (clienteId) {
+        query = query.eq('cliente_id', clienteId);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -41,17 +70,23 @@ export const useNotes = (projectId?: string) => {
   });
 };
 
+// Manter compatibilidade
+export const useProjectNotes = (projectId?: string) => useNotes(projectId);
+
 export const useCreateNote = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (noteData: CreateNoteData) => {
+    mutationFn: async (noteData: Omit<Note, 'id' | 'created_at' | 'updated_at'>) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
         .from('notes')
-        .insert([{ ...noteData, user_id: user.id }])
+        .insert({
+          ...noteData,
+          user_id: user.id,
+        })
         .select()
         .single();
 
@@ -60,7 +95,7 @@ export const useCreateNote = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['notes', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
     },
   });
 };
@@ -77,7 +112,6 @@ export const useUpdateNote = () => {
         .from('notes')
         .update(updates)
         .eq('id', id)
-        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -86,7 +120,7 @@ export const useUpdateNote = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['notes', data.project_id] });
+      queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
     },
   });
 };
@@ -97,18 +131,36 @@ export const useDeleteNote = () => {
 
   return useMutation({
     mutationFn: async (noteId: string) => {
-      if (!user) throw new Error('Usuário não autenticado');
+      // Se estamos usando dados mockados, simular a exclusão
+      if (shouldUseMockData() || !user) {
+        // Simular delay da operação
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return { cliente_id: 'mock-project' };
+      }
+
+      // Primeiro buscar a nota para obter o cliente_id
+      const { data: noteData, error: fetchError } = await supabase
+        .from('notes')
+        .select('cliente_id')
+        .eq('id', noteId)
+        .single();
+
+      if (fetchError) throw fetchError;
 
       const { error } = await supabase
         .from('notes')
         .delete()
-        .eq('id', noteId)
-        .eq('user_id', user.id);
+        .eq('id', noteId);
 
       if (error) throw error;
+      
+      return noteData;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
+      if (data?.cliente_id) {
+        queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
+      }
     },
   });
 };

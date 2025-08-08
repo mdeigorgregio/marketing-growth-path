@@ -18,6 +18,7 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
   const [newNote, setNewNote] = useState({ title: '', content: '', tags: [] as string[] });
   const [editingNote, setEditingNote] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [newTag, setNewTag] = useState('');
 
   const { data: notes, isLoading } = useNotes(projectId);
@@ -86,6 +87,7 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
       });
       
       setEditingNote(null);
+      setIsEditing(false);
       toast({
         title: "Sucesso",
         description: "Nota atualizada com sucesso",
@@ -235,71 +237,16 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
                   {new Date(note.created_at).toLocaleDateString()}
                 </span>
                 <div className="flex gap-1">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setEditingNote(note)}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
-                      <DialogHeader>
-                        <DialogTitle>Editar Nota</DialogTitle>
-                      </DialogHeader>
-                      {editingNote && (
-                        <div className="space-y-4">
-                          <Input
-                            placeholder="Título da nota"
-                            value={editingNote.title}
-                            onChange={(e) => setEditingNote({ ...editingNote, title: e.target.value })}
-                          />
-                          <Textarea
-                            placeholder="Conteúdo da nota"
-                            value={editingNote.content || ''}
-                            onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
-                            rows={4}
-                          />
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <Input
-                                placeholder="Adicionar tag"
-                                value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault();
-                                    addTag(editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }));
-                                  }
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => addTag(editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }))}
-                              >
-                                <Tag className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {editingNote.tags.map((tag: string) => (
-                                <Badge key={tag} variant="secondary" className="cursor-pointer"
-                                  onClick={() => removeTag(tag, editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }))}>
-                                  {tag} ×
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex gap-2 justify-end">
-                            <Button variant="outline" onClick={() => setEditingNote(null)}>
-                              Cancelar
-                            </Button>
-                            <Button onClick={handleUpdateNote} disabled={updateNote.isPending}>
-                              {updateNote.isPending ? 'Salvando...' : 'Salvar'}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setEditingNote(note);
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Edit className="h-3 w-3" />
+                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -320,6 +267,71 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
           {searchTerm ? 'Nenhuma nota encontrada' : 'Nenhuma nota adicionada ainda'}
         </div>
       )}
+
+      {/* Dialog de Edição */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Nota</DialogTitle>
+          </DialogHeader>
+          {editingNote && (
+            <div className="space-y-4">
+              <Input
+                placeholder="Título da nota"
+                value={editingNote.title}
+                onChange={(e) => setEditingNote({ ...editingNote, title: e.target.value })}
+              />
+              <Textarea
+                placeholder="Conteúdo da nota"
+                value={editingNote.content || ''}
+                onChange={(e) => setEditingNote({ ...editingNote, content: e.target.value })}
+                rows={4}
+              />
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Adicionar tag"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag(editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }));
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => addTag(editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }))}
+                  >
+                    <Tag className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {editingNote.tags.map((tag: string) => (
+                    <Badge key={tag} variant="secondary" className="cursor-pointer"
+                      onClick={() => removeTag(tag, editingNote.tags, (tags) => setEditingNote({ ...editingNote, tags }))}>
+                      {tag} ×
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  setIsEditing(false);
+                  setEditingNote(null);
+                }}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateNote} disabled={updateNote.isPending}>
+                  {updateNote.isPending ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

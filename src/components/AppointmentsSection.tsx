@@ -24,6 +24,7 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
   });
   const [editingAppointment, setEditingAppointment] = useState<any>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const { data: appointments, isLoading } = useAppointments(projectId);
   const createAppointment = useCreateAppointment();
@@ -110,6 +111,7 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
       });
       
       setEditingAppointment(null);
+      setIsEditing(false);
       toast({
         title: "Sucesso",
         description: "Agendamento atualizado com sucesso",
@@ -141,8 +143,7 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
 
   const formatDateTime = (dateString: string) => {
     try {
-      const date = parseISO(dateString);
-      return format(date, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+      return format(parseISO(dateString), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
     } catch {
       return dateString;
     }
@@ -153,7 +154,7 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
       const date = parseISO(dateString);
       return format(date, "yyyy-MM-dd'T'HH:mm");
     } catch {
-      return dateString;
+      return '';
     }
   };
 
@@ -164,17 +165,16 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <h3 className="text-lg font-semibold">Agendamentos do Projeto</h3>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Buscar agendamentos..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Buscar agendamentos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex gap-2">
           <Dialog open={isCreating} onOpenChange={setIsCreating}>
             <DialogTrigger asChild>
               <Button>
@@ -251,63 +251,20 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
                 </div>
               </div>
               <div className="flex justify-end gap-1 pt-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" onClick={() => setEditingAppointment({
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setEditingAppointment({
                       ...appointment,
                       start_time: formatDateTimeInput(appointment.start_time),
                       end_time: formatDateTimeInput(appointment.end_time),
-                    })}>
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                      <DialogTitle>Editar Agendamento</DialogTitle>
-                    </DialogHeader>
-                    {editingAppointment && (
-                      <div className="space-y-4">
-                        <Input
-                          placeholder="Título do agendamento"
-                          value={editingAppointment.title}
-                          onChange={(e) => setEditingAppointment({ ...editingAppointment, title: e.target.value })}
-                        />
-                        <Textarea
-                          placeholder="Descrição do agendamento"
-                          value={editingAppointment.description || ''}
-                          onChange={(e) => setEditingAppointment({ ...editingAppointment, description: e.target.value })}
-                          rows={3}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-sm font-medium">Data e Hora de Início</label>
-                            <Input
-                              type="datetime-local"
-                              value={editingAppointment.start_time}
-                              onChange={(e) => setEditingAppointment({ ...editingAppointment, start_time: e.target.value })}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium">Data e Hora de Fim</label>
-                            <Input
-                              type="datetime-local"
-                              value={editingAppointment.end_time}
-                              onChange={(e) => setEditingAppointment({ ...editingAppointment, end_time: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => setEditingAppointment(null)}>
-                            Cancelar
-                          </Button>
-                          <Button onClick={handleUpdateAppointment} disabled={updateAppointment.isPending}>
-                            {updateAppointment.isPending ? 'Salvando...' : 'Salvar'}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </DialogContent>
-                </Dialog>
+                    });
+                    setIsEditing(true);
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -327,6 +284,59 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
           {searchTerm ? 'Nenhum agendamento encontrado' : 'Nenhum agendamento adicionado ainda'}
         </div>
       )}
+
+      {/* Dialog de Edição */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Agendamento</DialogTitle>
+          </DialogHeader>
+          {editingAppointment && (
+            <div className="space-y-4">
+              <Input
+                placeholder="Título do agendamento"
+                value={editingAppointment.title}
+                onChange={(e) => setEditingAppointment({ ...editingAppointment, title: e.target.value })}
+              />
+              <Textarea
+                placeholder="Descrição do agendamento"
+                value={editingAppointment.description || ''}
+                onChange={(e) => setEditingAppointment({ ...editingAppointment, description: e.target.value })}
+                rows={3}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Data e Hora de Início</label>
+                  <Input
+                    type="datetime-local"
+                    value={editingAppointment.start_time}
+                    onChange={(e) => setEditingAppointment({ ...editingAppointment, start_time: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Data e Hora de Fim</label>
+                  <Input
+                    type="datetime-local"
+                    value={editingAppointment.end_time}
+                    onChange={(e) => setEditingAppointment({ ...editingAppointment, end_time: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => {
+                  setIsEditing(false);
+                  setEditingAppointment(null);
+                }}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateAppointment} disabled={updateAppointment.isPending}>
+                  {updateAppointment.isPending ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

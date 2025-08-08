@@ -8,7 +8,13 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CreateProject from "./pages/CreateProject";
+import EditProject from "./pages/EditProject";
 import ProjectDetail from "./pages/ProjectDetail";
+import Notes from "./pages/Notes";
+import ViewNotes from "./pages/ViewNotes";
+import ViewAppointments from "./pages/ViewAppointments";
+import Analytics from "./pages/analytics/Analytics";
+import Pipeline from "./pages/pipeline/Pipeline";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,9 +66,15 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
+
             <Route path="/dashboard/projects/new" element={
               <ProtectedRoute>
                 <CreateProject />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/projects/:id/edit" element={
+              <ProtectedRoute>
+                <EditProject />
               </ProtectedRoute>
             } />
             <Route path="/dashboard/projects/:id" element={
@@ -70,7 +82,32 @@ const App = () => (
                 <ProjectDetail />
               </ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/dashboard/notes" element={
+              <ProtectedRoute>
+                <Notes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/projects/:id/notes" element={
+              <ProtectedRoute>
+                <ViewNotes />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/projects/:id/appointments" element={
+              <ProtectedRoute>
+                <ViewAppointments />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/pipeline" element={
+              <ProtectedRoute>
+                <Pipeline />
+              </ProtectedRoute>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
