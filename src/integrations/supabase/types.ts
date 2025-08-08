@@ -16,88 +16,72 @@ export type Database = {
     Tables: {
       appointments: {
         Row: {
-          created_at: string
+          cliente_id: string
+          created_at: string | null
           description: string | null
           end_time: string
           id: string
-          project_id: string
           start_time: string
           title: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
+          cliente_id: string
+          created_at?: string | null
           description?: string | null
           end_time: string
           id?: string
-          project_id: string
           start_time: string
           title: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
+          cliente_id?: string
+          created_at?: string | null
           description?: string | null
           end_time?: string
           id?: string
-          project_id?: string
           start_time?: string
           title?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "appointments_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notes: {
         Row: {
+          cliente_id: string
           content: string | null
-          created_at: string
+          created_at: string | null
           id: string
-          project_id: string
           tags: string[] | null
           title: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          cliente_id: string
           content?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          project_id: string
           tags?: string[] | null
           title: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          cliente_id?: string
           content?: string | null
-          created_at?: string
+          created_at?: string | null
           id?: string
-          project_id?: string
           tags?: string[] | null
           title?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "notes_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -132,11 +116,15 @@ export type Database = {
           cep: string | null
           cidade: string | null
           created_at: string
+          data_contrato: string | null
+          data_vencimento: string | null
+          dias_atraso: number | null
           email: string | null
           empresa: string
           estado: string | null
           id: string
           numero: string | null
+          observacoes: string | null
           origem: Database["public"]["Enums"]["project_origin"] | null
           plano_escolhido: string | null
           responsavel: string
@@ -144,20 +132,27 @@ export type Database = {
           servicos_avulsos: Json | null
           site: string | null
           status: Database["public"]["Enums"]["project_status"] | null
+          status_pagamento: string | null
           telefone: string | null
           updated_at: string
           user_id: string
+          valor_em_atraso: number | null
+          valor_plano: number | null
         }
         Insert: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           created_at?: string
+          data_contrato?: string | null
+          data_vencimento?: string | null
+          dias_atraso?: number | null
           email?: string | null
           empresa: string
           estado?: string | null
           id?: string
           numero?: string | null
+          observacoes?: string | null
           origem?: Database["public"]["Enums"]["project_origin"] | null
           plano_escolhido?: string | null
           responsavel: string
@@ -165,20 +160,27 @@ export type Database = {
           servicos_avulsos?: Json | null
           site?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
+          status_pagamento?: string | null
           telefone?: string | null
           updated_at?: string
           user_id: string
+          valor_em_atraso?: number | null
+          valor_plano?: number | null
         }
         Update: {
           bairro?: string | null
           cep?: string | null
           cidade?: string | null
           created_at?: string
+          data_contrato?: string | null
+          data_vencimento?: string | null
+          dias_atraso?: number | null
           email?: string | null
           empresa?: string
           estado?: string | null
           id?: string
           numero?: string | null
+          observacoes?: string | null
           origem?: Database["public"]["Enums"]["project_origin"] | null
           plano_escolhido?: string | null
           responsavel?: string
@@ -186,9 +188,12 @@ export type Database = {
           servicos_avulsos?: Json | null
           site?: string | null
           status?: Database["public"]["Enums"]["project_status"] | null
+          status_pagamento?: string | null
           telefone?: string | null
           updated_at?: string
           user_id?: string
+          valor_em_atraso?: number | null
+          valor_plano?: number | null
         }
         Relationships: []
       }

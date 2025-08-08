@@ -25,6 +25,13 @@ export interface Cliente {
   plano_escolhido?: string;
   servicos_avulsos?: any[];
   origem?: ClienteOrigin;
+  valor_plano?: number;
+  data_contrato?: string;
+  data_vencimento?: string;
+  status_pagamento?: 'Adimplente' | 'Inadimplente' | 'Pendente';
+  dias_atraso?: number;
+  valor_em_atraso?: number;
+  observacoes?: string;
   created_at: string;
   updated_at: string;
 }
