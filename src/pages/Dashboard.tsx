@@ -30,6 +30,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { ProjectStatus } from '@/hooks/useProjects';
 import { AdminPanel } from '@/components/AdminPanel';
 import { ServicesSection } from '@/components/ServicesSection';
+import { NotificationCenter } from '@/components/NotificationCenter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SalesFunnelChart from '@/components/charts/SalesFunnelChart';
 import RevenuePieChart from '@/components/charts/RevenuePieChart';
@@ -141,6 +142,7 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center space-x-4">
+            <NotificationCenter />
             <Button onClick={() => navigate('/dashboard/projects/new')} className="shadow-elegant">
               <Plus className="h-4 w-4 mr-2" />
               Novo Negocio
@@ -303,20 +305,20 @@ const Dashboard = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
+                              <DropdownMenuItem onSelect={(e) => {
+                                e.preventDefault();
                                 navigate(`/dashboard/projects/${project.id}/edit`);
                               }}>
                                 Editar
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
+                              <DropdownMenuItem onSelect={(e) => {
+                                e.preventDefault();
                                 navigate(`/dashboard/projects/${project.id}/notes`);
                               }}>
                                 Ver Notas
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
+                              <DropdownMenuItem onSelect={(e) => {
+                                e.preventDefault();
                                 navigate(`/dashboard/projects/${project.id}/appointments`);
                               }}>
                                 Ver Agendamentos

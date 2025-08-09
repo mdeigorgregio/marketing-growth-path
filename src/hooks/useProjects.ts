@@ -100,7 +100,7 @@ export const useCreateProject = () => {
 
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ ...clienteData, user_id: user.id }])
+        .insert([{ ...projectData, user_id: user.id }])
         .select()
         .single();
 
@@ -155,7 +155,7 @@ export const useDeleteProject = () => {
       const { error } = await supabase
         .from('projects')
         .delete()
-        .eq('id', clienteId)
+        .eq('id', projectId)
         .eq('user_id', user.id);
 
       if (error) throw error;

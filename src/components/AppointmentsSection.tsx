@@ -58,7 +58,7 @@ export const AppointmentsSection = ({ projectId }: AppointmentsSectionProps) => 
 
     try {
       await createAppointment.mutateAsync({
-        project_id: projectId,
+        cliente_id: projectId,
         title: newAppointment.title,
         description: newAppointment.description,
         start_time: newAppointment.start_time,

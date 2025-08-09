@@ -58,7 +58,7 @@ export const useNotes = (clienteId?: string) => {
         .select('*');
 
       if (clienteId) {
-        query = query.eq('cliente_id', clienteId);
+        query = query.eq('project_id', clienteId);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -95,7 +95,7 @@ export const useCreateNote = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
+      queryClient.invalidateQueries({ queryKey: ['notes', data.project_id] });
     },
   });
 };
@@ -120,7 +120,7 @@ export const useUpdateNote = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
+      queryClient.invalidateQueries({ queryKey: ['notes', data.project_id] });
     },
   });
 };
@@ -138,10 +138,10 @@ export const useDeleteNote = () => {
         return { cliente_id: 'mock-project' };
       }
 
-      // Primeiro buscar a nota para obter o cliente_id
+      // Primeiro buscar a nota para obter o project_id
       const { data: noteData, error: fetchError } = await supabase
         .from('notes')
-        .select('cliente_id')
+        .select('project_id')
         .eq('id', noteId)
         .single();
 
@@ -158,8 +158,8 @@ export const useDeleteNote = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-      if (data?.cliente_id) {
-        queryClient.invalidateQueries({ queryKey: ['notes', data.cliente_id] });
+      if (data?.project_id) {
+        queryClient.invalidateQueries({ queryKey: ['notes', data.project_id] });
       }
     },
   });

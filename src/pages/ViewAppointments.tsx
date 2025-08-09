@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppointments, useCreateAppointment, useUpdateAppointment, useDeleteAppointment } from '@/hooks/useAppointments';
-import { useProject } from '@/hooks/useProjects';
+import { useProjects } from '@/hooks/useProjects';
 
 interface Appointment {
   id: string;
@@ -81,7 +81,7 @@ const ViewAppointments = () => {
 
     try {
       await createAppointmentMutation.mutateAsync({
-        project_id: id!,
+        cliente_id: id!,
         title: newAppointment.title,
         description: newAppointment.description,
         start_time: newAppointment.start_time,

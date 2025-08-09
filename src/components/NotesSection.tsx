@@ -45,7 +45,7 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
 
     try {
       await createNote.mutateAsync({
-        project_id: projectId,
+        cliente_id: projectId,
         title: newNote.title,
         content: newNote.content,
         tags: newNote.tags,

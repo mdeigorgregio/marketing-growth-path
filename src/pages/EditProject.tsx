@@ -17,21 +17,27 @@ const EditProject = () => {
   const updateProject = useUpdateProject();
 
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: 'active' as 'active' | 'completed' | 'on_hold',
-    budget: '',
-    deadline: '',
+    empresa: '',
+    responsavel: '',
+    telefone: '',
+    email: '',
+    site: '',
+    status: 'LEAD' as 'LEAD' | 'Assinante' | 'Inadimplente' | 'Cancelado',
+    plano_escolhido: '',
+    origem: 'Orgânico' as 'Tráfego Pago' | 'LA Educação' | 'Orgânico' | 'Indicação',
   });
 
   useEffect(() => {
     if (project) {
       setFormData({
-        name: project.name || '',
-        description: project.description || '',
-        status: project.status || 'active',
-        budget: project.budget?.toString() || '',
-        deadline: project.deadline ? new Date(project.deadline).toISOString().split('T')[0] : '',
+        empresa: project.empresa || '',
+        responsavel: project.responsavel || '',
+        telefone: project.telefone || '',
+        email: project.email || '',
+        site: project.site || '',
+        status: project.status || 'LEAD',
+        plano_escolhido: project.plano_escolhido || '',
+        origem: project.origem || 'Orgânico',
       });
     }
   }, [project]);
@@ -39,10 +45,10 @@ const EditProject = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
+    if (!formData.empresa.trim() || !formData.responsavel.trim()) {
       toast({
         title: "Erro",
-        description: "Nome do projeto é obrigatório",
+        description: "Nome da empresa e responsável são obrigatórios",
         variant: "destructive",
       });
       return;
@@ -52,11 +58,14 @@ const EditProject = () => {
       await updateProject.mutateAsync({
         id: id!,
         updates: {
-          name: formData.name,
-          description: formData.description,
+          empresa: formData.empresa,
+          responsavel: formData.responsavel,
+          telefone: formData.telefone,
+          email: formData.email,
+          site: formData.site,
           status: formData.status,
-          budget: formData.budget ? parseFloat(formData.budget) : null,
-          deadline: formData.deadline || null,
+          plano_escolhido: formData.plano_escolhido,
+          origem: formData.origem,
         },
       });
       
@@ -119,59 +128,94 @@ const EditProject = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Nome do Projeto *</label>
+                  <label className="text-sm font-medium">Nome da Empresa *</label>
                   <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Digite o nome do projeto"
+                    value={formData.empresa}
+                    onChange={(e) => setFormData({ ...formData, empresa: e.target.value })}
+                    placeholder="Digite o nome da empresa"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-sm font-medium">Responsável *</label>
+                  <Input
+                    value={formData.responsavel}
+                    onChange={(e) => setFormData({ ...formData, responsavel: e.target.value })}
+                    placeholder="Digite o nome do responsável"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Telefone</label>
+                  <Input
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                    placeholder="Digite o telefone"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Digite o email"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Site</label>
+                  <Input
+                    value={formData.site}
+                    onChange={(e) => setFormData({ ...formData, site: e.target.value })}
+                    placeholder="Digite o site"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-sm font-medium">Status</label>
-                  <Select value={formData.status} onValueChange={(value: 'active' | 'completed' | 'on_hold') => setFormData({ ...formData, status: value })}>
+                  <Select value={formData.status} onValueChange={(value: 'LEAD' | 'Assinante' | 'Inadimplente' | 'Cancelado') => setFormData({ ...formData, status: value })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="on_hold">Em Espera</SelectItem>
-                      <SelectItem value="completed">Concluído</SelectItem>
+                      <SelectItem value="LEAD">Lead</SelectItem>
+                      <SelectItem value="Assinante">Assinante</SelectItem>
+                      <SelectItem value="Inadimplente">Inadimplente</SelectItem>
+                      <SelectItem value="Cancelado">Cancelado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Orçamento</label>
+                  <label className="text-sm font-medium">Plano Escolhido</label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.budget}
-                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                    placeholder="0.00"
+                    value={formData.plano_escolhido}
+                    onChange={(e) => setFormData({ ...formData, plano_escolhido: e.target.value })}
+                    placeholder="Digite o plano escolhido"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Prazo</label>
-                  <Input
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  />
+                  <label className="text-sm font-medium">Origem</label>
+                  <Select value={formData.origem} onValueChange={(value: 'Tráfego Pago' | 'LA Educação' | 'Orgânico' | 'Indicação') => setFormData({ ...formData, origem: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Tráfego Pago">Tráfego Pago</SelectItem>
+                      <SelectItem value="LA Educação">LA Educação</SelectItem>
+                      <SelectItem value="Orgânico">Orgânico</SelectItem>
+                      <SelectItem value="Indicação">Indicação</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Descrição</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Descreva o projeto..."
-                  rows={4}
-                />
-              </div>
+
 
               <div className="flex gap-4 pt-4">
                 <Button 

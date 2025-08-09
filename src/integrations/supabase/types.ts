@@ -20,7 +20,7 @@ export type Database = {
           description: string | null
           end_time: string
           id: string
-          project_id: string
+          cliente_id: string
           start_time: string
           title: string
           updated_at: string
@@ -31,7 +31,7 @@ export type Database = {
           description?: string | null
           end_time: string
           id?: string
-          project_id: string
+          cliente_id: string
           start_time: string
           title: string
           updated_at?: string
@@ -42,7 +42,7 @@ export type Database = {
           description?: string | null
           end_time?: string
           id?: string
-          project_id?: string
+          cliente_id?: string
           start_time?: string
           title?: string
           updated_at?: string
@@ -50,10 +50,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "appointments_project_id_fkey"
-            columns: ["project_id"]
+            foreignKeyName: "appointments_cliente_id_fkey"
+            columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -63,7 +63,7 @@ export type Database = {
           content: string | null
           created_at: string
           id: string
-          project_id: string
+          cliente_id: string
           tags: string[] | null
           title: string
           updated_at: string
@@ -73,7 +73,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          project_id: string
+          cliente_id: string
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -83,7 +83,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: string
-          project_id?: string
+          cliente_id?: string
           tags?: string[] | null
           title?: string
           updated_at?: string
@@ -91,10 +91,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "notes_project_id_fkey"
-            columns: ["project_id"]
+            foreignKeyName: "notes_cliente_id_fkey"
+            columns: ["cliente_id"]
             isOneToOne: false
-            referencedRelation: "projects"
+            referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -126,7 +126,7 @@ export type Database = {
         }
         Relationships: []
       }
-      projects: {
+      clientes: {
         Row: {
           bairro: string | null
           cep: string | null

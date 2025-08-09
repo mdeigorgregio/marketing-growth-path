@@ -61,7 +61,7 @@ export const useAppointments = (clienteId?: string) => {
         .select('*');
 
       if (clienteId) {
-        query = query.eq('cliente_id', clienteId);
+        query = query.eq('project_id', clienteId);
       }
 
       const { data, error } = await query.order('start_time', { ascending: true });
@@ -95,7 +95,7 @@ export const useCreateAppointment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['appointments', data.cliente_id] });
+      queryClient.invalidateQueries({ queryKey: ['appointments', data.project_id] });
     },
   });
 };
@@ -120,7 +120,7 @@ export const useUpdateAppointment = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      queryClient.invalidateQueries({ queryKey: ['appointments', data.cliente_id] });
+      queryClient.invalidateQueries({ queryKey: ['appointments', data.project_id] });
     },
   });
 };
