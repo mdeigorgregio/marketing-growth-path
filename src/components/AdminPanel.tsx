@@ -103,17 +103,17 @@ export const AdminPanel = () => {
                       <p className="font-medium">{user.id}</p>
                       <p className="text-sm text-muted-foreground">ID: {user.id}</p>
                     </div>
-                    <Badge variant={getRoleBadgeVariant(user.role || 'USUARIO')}>
-                      {getRoleDisplayName(user.role || 'USUARIO')}
+                     <Badge variant={getRoleBadgeVariant('USUARIO')}>
+                       {getRoleDisplayName('USUARIO')}
                     </Badge>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select
-                    value={user.role || 'USUARIO'}
-                    onValueChange={(newRole: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO') => 
-                      handleRoleChange(user.id, newRole)
-                    }
+                   <Select
+                     value={'USUARIO'}
+                     onValueChange={(newRole: 'ADMINISTRADOR' | 'EDITOR' | 'USUARIO') => 
+                       handleRoleChange(user.id, newRole)
+                     }
                   >
                     <SelectTrigger className="w-40">
                       <SelectValue />

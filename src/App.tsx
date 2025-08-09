@@ -15,6 +15,7 @@ import ViewNotes from "./pages/ViewNotes";
 import ViewAppointments from "./pages/ViewAppointments";
 import Analytics from "./pages/analytics/Analytics";
 import Pipeline from "./pages/pipeline/Pipeline";
+import Sales from "./pages/sales/Sales";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,6 +106,11 @@ const App = () => (
             <Route path="/dashboard/pipeline" element={
               <ProtectedRoute>
                 <Pipeline />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/sales" element={
+              <ProtectedRoute>
+                <Sales />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL ROUTE */}
