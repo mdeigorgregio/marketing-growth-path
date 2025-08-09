@@ -1,317 +1,156 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { MessageCircle, Send, Eye } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { MessageCircle, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Cliente } from '@/hooks/useProjects';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Cliente {
-  id: string;
-  nome_empresa: string;
-  responsavel: string;
-  telefone: string;
-  status: string;
-  status_pagamento?: 'Adimplente' | 'Inadimplente' | 'Pendente';
-  dias_atraso?: number;
-  valor_plano?: number;
-  data_vencimento?: string;
-  plano_escolhido?: string;
-}
+import { useAuth } from '@/contexts/AuthContext';
 
 interface WhatsAppButtonProps {
   cliente: Cliente;
-  size?: 'sm' | 'default' | 'lg';
   variant?: 'default' | 'outline' | 'ghost';
-  showLabel?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 const whatsappTemplates = {
   'Adimplente': {
-    'Lead': `Olá *{{responsavel}}* da *{{nome_empresa}}*! 👋
-
-Obrigado pelo interesse em nossos serviços. Estou entrando em contato para entender melhor suas necessidades e apresentar nossa solução.
-
-Quando podemos conversar?`,
+    'LEAD': (cliente: Cliente) => `Olá *${cliente.responsavel}* da *${cliente.empresa}*! 👋\n\nObrigado pelo interesse em nossos serviços. Estou entrando em contato para entender melhor suas necessidades e apresentar nossa solução.\n\nQuando podemos conversar?`,
     
-    'Assinante': `Olá *{{responsavel}}*! 😊
-
-Espero que esteja tudo bem com a *{{nome_empresa}}*.
-
-Estou entrando em contato para saber como está sendo sua experiência com nosso serviço. Há algo em que posso ajudar?`,
+    'Assinante': (cliente: Cliente) => `Olá *${cliente.responsavel}*! 😊\n\nEspero que esteja tudo bem com a *${cliente.empresa}*.\n\nEstou entrando em contato para saber como está sendo sua experiência com nosso serviço. Há algo em que posso ajudar?`,
     
-    'default': `Olá *{{responsavel}}* da *{{nome_empresa}}*! 👋
-
-Como posso ajudá-lo(a) hoje?`
+    'Inadimplente': (cliente: Cliente) => `Olá *${cliente.responsavel}*! 😊\n\nEspero que esteja tudo bem com a *${cliente.empresa}*.\n\nEstou entrando em contato para saber como está sendo sua experiência com nosso serviço. Há algo em que posso ajudar?`,
+    
+    'Cancelado': (cliente: Cliente) => `Olá *${cliente.responsavel}* da *${cliente.empresa}*! 👋\n\nSentimos muito por ter cancelado nossos serviços. Gostaríamos de entender melhor os motivos e ver como podemos melhorar.\n\nPoderia nos dar um feedback?`
   },
   
-  'Inadimplente': `Olá *{{responsavel}}* da *{{nome_empresa}}*! 👋
-
-📋 *LEMBRETE DE PAGAMENTO*
-
-Identificamos que o pagamento do seu plano *{{plano_escolhido}}* está em atraso há *{{dias_atraso}}* dia(s).
-
-💰 Valor: R$ {{valor_plano}}
-📅 Vencimento: {{data_vencimento}}
-
-Para regularizar, entre em contato conosco. Estamos aqui para ajudar! 🤝`,
+  'Inadimplente': (cliente: Cliente) => `Olá *${cliente.responsavel}* da *${cliente.empresa}*! 👋\n\n📋 *LEMBRETE DE PAGAMENTO*\n\nIdentificamos que o pagamento do seu plano *${cliente.plano_escolhido || 'contratado'}* está em atraso há *${cliente.dias_atraso || 0}* dia(s).\n\n💰 Valor: R$ ${cliente.valor_plano?.toFixed(2) || '0,00'}\n📅 Vencimento: ${cliente.data_vencimento ? new Date(cliente.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}\n\nPara regularizar, entre em contato conosco. Estamos aqui para ajudar! 🤝`,
   
-  'Pendente': `Olá *{{responsavel}}*! ⏰
-
-Seu pagamento do plano *{{plano_escolhido}}* vence em breve.
-
-📅 Vencimento: {{data_vencimento}}
-💰 Valor: R$ {{valor_plano}}
-
-Para evitar interrupções no serviço, não esqueça de realizar o pagamento. Qualquer dúvida, estou à disposição! 😊`
+  'Pendente': (cliente: Cliente) => `Olá *${cliente.responsavel}*! ⏰\n\nSeu pagamento do plano *${cliente.plano_escolhido || 'contratado'}* vence em breve.\n\n📅 Vencimento: ${cliente.data_vencimento ? new Date(cliente.data_vencimento).toLocaleDateString('pt-BR') : 'N/A'}\n💰 Valor: R$ ${cliente.valor_plano?.toFixed(2) || '0,00'}\n\nPara evitar interrupções no serviço, não esqueça de realizar o pagamento. Qualquer dúvida, estou à disposição! 😊`
 };
 
-export function WhatsAppButton({ 
-  cliente, 
-  size = 'default', 
-  variant = 'default',
-  showLabel = true 
-}: WhatsAppButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [customMessage, setCustomMessage] = useState('');
-  const { toast } = useToast();
-
-  const getTemplate = () => {
-    const statusPagamento = cliente.status_pagamento || 'Adimplente';
-    
-    if (statusPagamento === 'Adimplente') {
-      const statusCliente = cliente.status;
-      return whatsappTemplates.Adimplente[statusCliente as keyof typeof whatsappTemplates.Adimplente] || 
-             whatsappTemplates.Adimplente.default;
-    }
-    
-    return whatsappTemplates[statusPagamento];
-  };
-
-  const replaceVariables = (template: string) => {
-    const formatCurrency = (value: number) => {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(value);
-    };
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleDateString('pt-BR');
-    };
-
-    return template
-      .replace(/{{responsavel}}/g, cliente.responsavel || 'Cliente')
-      .replace(/{{nome_empresa}}/g, cliente.nome_empresa || 'Empresa')
-      .replace(/{{plano_escolhido}}/g, cliente.plano_escolhido || 'seu plano')
-      .replace(/{{dias_atraso}}/g, String(cliente.dias_atraso || 0))
-      .replace(/{{valor_plano}}/g, cliente.valor_plano ? formatCurrency(cliente.valor_plano) : 'R$ 0,00')
-      .replace(/{{data_vencimento}}/g, cliente.data_vencimento ? formatDate(cliente.data_vencimento) : 'não definida');
-  };
-
-  const getDefaultMessage = () => {
-    const template = getTemplate();
-    return replaceVariables(template);
-  };
+export const WhatsAppButton = ({ cliente, variant = 'default', size = 'sm' }: WhatsAppButtonProps) => {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatPhoneNumber = (phone: string) => {
     // Remove todos os caracteres não numéricos
     const cleaned = phone.replace(/\D/g, '');
     
-    // Adiciona código do país se não tiver
+    // Adiciona o código do país se não tiver
     if (cleaned.length === 11 && cleaned.startsWith('11')) {
       return `55${cleaned}`;
     } else if (cleaned.length === 10) {
       return `5511${cleaned}`;
     } else if (cleaned.length === 11) {
       return `55${cleaned}`;
-    } else if (cleaned.startsWith('55')) {
-      return cleaned;
     }
     
-    return `55${cleaned}`;
+    return cleaned;
   };
 
-  const sendWhatsApp = async (message: string) => {
-    try {
-      if (!cliente.telefone) {
-        toast({
-          title: 'Erro',
-          description: 'Cliente não possui telefone cadastrado.',
-          variant: 'destructive'
-        });
-        return;
+  const generateMessage = () => {
+    const statusPagamento = cliente.status_pagamento || 'Adimplente';
+    
+    if (statusPagamento === 'Inadimplente') {
+      return whatsappTemplates.Inadimplente(cliente);
+    } else if (statusPagamento === 'Pendente') {
+      return whatsappTemplates.Pendente(cliente);
+    } else {
+      // Adimplente - escolhe template baseado no status do cliente
+      const template = whatsappTemplates.Adimplente[cliente.status as keyof typeof whatsappTemplates.Adimplente];
+      if (typeof template === 'function') {
+        return template(cliente);
       }
+      return whatsappTemplates.Adimplente.LEAD(cliente);
+    }
+  };
 
-      const formattedPhone = formatPhoneNumber(cliente.telefone);
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+  const logWhatsAppUsage = async (telefone: string, mensagem: string, tipoMensagem: string) => {
+    if (!user) return;
 
-      // Salvar histórico no banco
-      const { error } = await supabase
+    try {
+      await supabase
         .from('whatsapp_history')
         .insert({
           cliente_id: cliente.id,
-          telefone: formattedPhone,
-          mensagem: message,
-          template_usado: cliente.status_pagamento || 'Adimplente'
+          telefone,
+          mensagem,
+          tipo_mensagem: tipoMensagem,
+          user_id: user.id
         });
-
-      if (error) {
-        console.error('Erro ao salvar histórico WhatsApp:', error);
-      }
-
-      // Abrir WhatsApp
-      window.open(whatsappUrl, '_blank');
-      
-      toast({
-        title: 'WhatsApp Aberto',
-        description: 'Mensagem enviada para o WhatsApp!',
-      });
-
-      setIsOpen(false);
     } catch (error) {
-      console.error('Erro ao enviar WhatsApp:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao abrir WhatsApp. Tente novamente.',
-        variant: 'destructive'
-      });
+      console.error('Erro ao salvar histórico WhatsApp:', error);
     }
   };
 
-  const handleQuickSend = () => {
-    const defaultMessage = getDefaultMessage();
-    sendWhatsApp(defaultMessage);
-  };
-
-  const handleCustomSend = () => {
-    if (!customMessage.trim()) {
-      toast({
-        title: 'Erro',
-        description: 'Digite uma mensagem antes de enviar.',
-        variant: 'destructive'
-      });
+  const handleWhatsAppClick = async () => {
+    if (!cliente.telefone) {
+      toast.error('Cliente não possui telefone cadastrado');
       return;
     }
-    sendWhatsApp(customMessage);
+
+    setIsLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(cliente.telefone);
+      const message = generateMessage();
+      const encodedMessage = encodeURIComponent(message);
+      
+      // Determinar tipo da mensagem
+      const tipoMensagem = cliente.status_pagamento === 'Inadimplente' ? 'cobranca' :
+                          cliente.status_pagamento === 'Pendente' ? 'lembrete' :
+                          cliente.status === 'LEAD' ? 'saudacao' : 'followup';
+
+      // Log do uso
+      await logWhatsAppUsage(formattedPhone, message, tipoMensagem);
+
+      // Abrir WhatsApp
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+      window.open(whatsappUrl, '_blank');
+
+      toast.success('WhatsApp aberto com mensagem pré-preenchida!');
+    } catch (error) {
+      toast.error('Erro ao abrir WhatsApp');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getButtonColor = () => {
-    const statusPagamento = cliente.status_pagamento;
-    if (statusPagamento === 'Inadimplente') {
-      return 'bg-red-600 hover:bg-red-700';
-    } else if (statusPagamento === 'Pendente') {
-      return 'bg-yellow-600 hover:bg-yellow-700';
+  const getStatusBadge = () => {
+    if (cliente.status_pagamento === 'Inadimplente') {
+      return <Badge variant="destructive" className="text-xs">Cobrança</Badge>;
+    } else if (cliente.status_pagamento === 'Pendente') {
+      return <Badge variant="outline" className="text-xs">Lembrete</Badge>;
+    } else if (cliente.status === 'LEAD') {
+      return <Badge variant="secondary" className="text-xs">Saudação</Badge>;
     }
-    return 'bg-green-600 hover:bg-green-700';
+    return <Badge variant="default" className="text-xs">Follow-up</Badge>;
   };
 
-  const getStatusIndicator = () => {
-    const statusPagamento = cliente.status_pagamento;
-    if (statusPagamento === 'Inadimplente') {
-      return '🔴';
-    } else if (statusPagamento === 'Pendente') {
-      return '🟡';
-    }
-    return '🟢';
-  };
+  if (!cliente.telefone) {
+    return (
+      <Button variant="ghost" size={size} disabled className="text-muted-foreground">
+        <MessageCircle className="w-4 h-4 mr-1" />
+        Sem telefone
+      </Button>
+    );
+  }
 
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-2">
-        {/* Botão rápido */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size={size}
-              variant={variant}
-              onClick={handleQuickSend}
-              className={`${getButtonColor()} text-white border-0`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              {showLabel && <span className="ml-2">WhatsApp {getStatusIndicator()}</span>}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="max-w-xs">
-              <p className="font-medium mb-2">Envio rápido - {cliente.status_pagamento || 'Adimplente'}</p>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">
-                {getDefaultMessage().substring(0, 100)}...
-              </p>
-            </div>
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Botão para mensagem personalizada */}
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button size={size} variant="outline">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Enviar WhatsApp - {cliente.nome_empresa}</DialogTitle>
-              <DialogDescription>
-                Personalize sua mensagem antes de enviar para {cliente.responsavel}
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Mensagem Padrão ({cliente.status_pagamento || 'Adimplente'})
-                </label>
-                <div className="p-3 bg-gray-50 rounded-lg border">
-                  <p className="text-sm whitespace-pre-wrap">{getDefaultMessage()}</p>
-                </div>
-                <Button 
-                  onClick={handleQuickSend}
-                  className={`mt-2 ${getButtonColor()} text-white`}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar Mensagem Padrão
-                </Button>
-              </div>
-
-              <div className="border-t pt-4">
-                <label className="text-sm font-medium mb-2 block">
-                  Ou escreva uma mensagem personalizada:
-                </label>
-                <Textarea
-                  placeholder="Digite sua mensagem personalizada..."
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  rows={6}
-                  className="mb-2"
-                />
-                <Button 
-                  onClick={handleCustomSend}
-                  variant="outline"
-                  disabled={!customMessage.trim()}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar Mensagem Personalizada
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </TooltipProvider>
+    <div className="flex items-center gap-2">
+      <Button
+        variant={variant}
+        size={size}
+        onClick={handleWhatsAppClick}
+        disabled={isLoading}
+        className="bg-green-600 hover:bg-green-700 text-white"
+      >
+        <MessageCircle className="w-4 h-4 mr-1" />
+        {isLoading ? 'Abrindo...' : 'WhatsApp'}
+        <ExternalLink className="w-3 h-3 ml-1" />
+      </Button>
+      {getStatusBadge()}
+    </div>
   );
-}
+};
