@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, Search, Tag } from 'lucide-react';
 import { useNotes, useCreateNote, useUpdateNote, useDeleteNote } from '@/hooks/useNotes';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -21,6 +22,7 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newTag, setNewTag] = useState('');
 
+  const { user } = useAuth();
   const { data: notes, isLoading } = useNotes(projectId);
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
