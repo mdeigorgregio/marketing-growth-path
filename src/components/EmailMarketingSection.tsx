@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mail, Send, Template, Users, Plus } from 'lucide-react';
+import { Mail, Send, FileText, Users, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function EmailMarketingSection() {
@@ -55,7 +55,7 @@ export function EmailMarketingSection() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
-              <Template className="h-5 w-5 text-orange-500" />
+              <FileText className="h-5 w-5 text-orange-500" />
               <div>
                 <p className="text-sm text-muted-foreground">Taxa de Cliques</p>
                 <p className="text-2xl font-bold">12%</p>
@@ -67,7 +67,7 @@ export function EmailMarketingSection() {
 
       <Card>
         <CardContent className="p-8 text-center">
-          <Template className="h-16 w-16 mx-auto mb-4 opacity-50" />
+          <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
           <h3 className="text-xl font-semibold mb-2">Em Desenvolvimento</h3>
           <p className="text-muted-foreground mb-4">
             O sistema completo de email marketing estará disponível em breve.

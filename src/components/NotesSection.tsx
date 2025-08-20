@@ -44,12 +44,14 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
     }
 
     try {
-      await createNote.mutateAsync({
+      const noteData = {
         cliente_id: projectId,
+        user_id: user!.id,
         title: newNote.title,
         content: newNote.content,
-        tags: newNote.tags,
-      });
+        tags: newNote.tags || [],
+      };
+      await createNote.mutateAsync(noteData);
       
       setNewNote({ title: '', content: '', tags: [] });
       setIsCreating(false);

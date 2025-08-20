@@ -39,11 +39,11 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, PieChart as RechartsPieChart, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie } from 'recharts';
 
 interface ClienteFinanceiro {
   id: string;
-  nome_empresa: string;
+  empresa: string;
   responsavel: string;
   telefone?: string;
   email?: string;
@@ -67,7 +67,7 @@ interface TarefaCobranca {
   cliente_id: string;
   valor_relacionado?: number;
   cliente?: {
-    nome_empresa: string;
+    empresa: string;
     status_pagamento: string;
     valor_plano: number;
   };
@@ -119,10 +119,7 @@ export function FinancialDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('tarefas')
-        .select(`
-          *,
-          cliente:clientes(nome_empresa, status_pagamento, valor_plano)
-        `)
+        .select('*')
         .in('tipo', ['cobrar_pagamento', 'negociar_parcelamento', 'verificar_pagamento'])
         .order('data_vencimento', { ascending: true });
       
@@ -223,7 +220,7 @@ export function FinancialDashboard() {
     const dados = {
       metricas,
       clientes: clientes.map(c => ({
-        empresa: c.nome_empresa,
+        empresa: c.empresa,
         responsavel: c.responsavel,
         status: c.status_pagamento,
         valor_plano: c.valor_plano,
@@ -472,7 +469,7 @@ export function FinancialDashboard() {
                   {clientesInadimplentes.slice(0, 10).map(cliente => (
                     <div key={cliente.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
                       <div>
-                        <h4 className="font-medium">{cliente.nome_empresa}</h4>
+                        <h4 className="font-medium">{cliente.empresa}</h4>
                         <p className="text-sm text-gray-600">{cliente.responsavel}</p>
                         <p className="text-xs text-red-600">
                           {cliente.dias_atraso} dias de atraso
@@ -504,321 +501,57 @@ export function FinancialDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-blue-500" />
+                  <Clock className="h-5 w-5 text-orange-500" />
                   Tarefas de Cobrança ({tarefasPendentes.length})
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {tarefasPendentes.slice(0, 10).map(tarefa => {
-                    const isVencida = new Date(tarefa.data_vencimento) < new Date();
-                    return (
-                      <div key={tarefa.id} className={`p-3 rounded-lg ${
-                        isVencida ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
-                      }`}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-medium">{tarefa.titulo}</h4>
-                            <p className="text-sm text-gray-600">
-                              {tarefa.cliente?.nome_empresa}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Vence: {format(new Date(tarefa.data_vencimento), 'dd/MM/yyyy')}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            {isVencida && (
-                              <Badge variant="destructive" className="mb-1">
-                                Vencida
-                              </Badge>
-                            )}
-                            {tarefa.valor_relacionado && (
-                              <p className="text-sm font-medium">
-                                R$ {tarefa.valor_relacionado.toLocaleString('pt-BR')}
-                              </p>
-                            )}
-                          </div>
+                  {tarefasPendentes.slice(0, 10).map(tarefa => (
+                    <div key={tarefa.id} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{tarefa.titulo}</h4>
+                          <p className="text-sm text-gray-600 capitalize">{tarefa.tipo?.replace('_', ' ')}</p>
+                          <p className="text-xs text-orange-600">
+                            Vence: {format(new Date(tarefa.data_vencimento), 'dd/MM/yyyy')}
+                          </p>
                         </div>
+                        <Badge 
+                          variant={tarefa.status === 'pendente' ? 'destructive' : 'secondary'}
+                          className="ml-2"
+                        >
+                          {tarefa.status}
+                        </Badge>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
 
-          {/* Ações Rápidas de Cobrança */}
+        <TabsContent value="analytics" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Ações Rápidas de Cobrança</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button className="h-20 flex-col">
-                  <Phone className="h-6 w-6 mb-2" />
-                  Ligar para Inadimplentes
-                </Button>
-                <Button className="h-20 flex-col" variant="outline">
-                  <MessageSquare className="h-6 w-6 mb-2" />
-                  WhatsApp em Massa
-                </Button>
-                <Button className="h-20 flex-col" variant="outline">
-                  <Mail className="h-6 w-6 mb-2" />
-                  E-mail de Cobrança
-                </Button>
-                <Button className="h-20 flex-col" variant="outline">
-                  <Calendar className="h-6 w-6 mb-2" />
-                  Agendar Negociação
-                </Button>
-              </div>
+            <CardContent className="p-8 text-center">
+              <BarChart3 className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">Analytics Avançado</h3>
+              <p className="text-muted-foreground mb-4">
+                Relatórios detalhados e análises preditivas em desenvolvimento.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Análise por Origem */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Inadimplência por Origem</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {['Tráfego Pago', 'Orgânico', 'Indicação', 'Cold Email'].map(origem => {
-                    const clientesOrigem = clientes.filter(c => c.origem === origem);
-                    const inadimplentesOrigem = clientesOrigem.filter(c => c.status_pagamento === 'Inadimplente');
-                    const taxa = clientesOrigem.length > 0 ? (inadimplentesOrigem.length / clientesOrigem.length) * 100 : 0;
-                    
-                    return (
-                      <div key={origem} className="flex justify-between items-center">
-                        <span>{origem}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">
-                            {inadimplentesOrigem.length}/{clientesOrigem.length}
-                          </span>
-                          <Badge variant={taxa > 20 ? 'destructive' : taxa > 10 ? 'secondary' : 'default'}>
-                            {taxa.toFixed(1)}%
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Análise por Valor do Plano */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Inadimplência por Faixa de Valor</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    { label: 'Até R$ 100', min: 0, max: 100 },
-                    { label: 'R$ 101 - R$ 300', min: 101, max: 300 },
-                    { label: 'R$ 301 - R$ 500', min: 301, max: 500 },
-                    { label: 'Acima de R$ 500', min: 501, max: Infinity },
-                  ].map(faixa => {
-                    const clientesFaixa = clientes.filter(c => 
-                      (c.valor_plano || 0) >= faixa.min && (c.valor_plano || 0) <= faixa.max
-                    );
-                    const inadimplementesFaixa = clientesFaixa.filter(c => c.status_pagamento === 'Inadimplente');
-                    const taxa = clientesFaixa.length > 0 ? (inadimplementesFaixa.length / clientesFaixa.length) * 100 : 0;
-                    
-                    return (
-                      <div key={faixa.label} className="flex justify-between items-center">
-                        <span>{faixa.label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">
-                            {inadimplementesFaixa.length}/{clientesFaixa.length}
-                          </span>
-                          <Badge variant={taxa > 20 ? 'destructive' : taxa > 10 ? 'secondary' : 'default'}>
-                            {taxa.toFixed(1)}%
-                          </Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Métricas Avançadas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tempo Médio de Regularização</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{metricas.tempoMedioRegularizacao} dias</div>
-                <p className="text-sm text-gray-600">Meta: 10 dias</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Taxa de Recuperação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">75%</div>
-                <p className="text-sm text-gray-600">Dos valores em atraso</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Eficiência de Cobrança</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">85%</div>
-                <p className="text-sm text-gray-600">Tarefas concluídas no prazo</p>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
         <TabsContent value="previsoes" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Previsão de Recebimento */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Previsão de Recebimento</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-green-50 rounded">
-                    <span>Este mês</span>
-                    <span className="font-bold text-green-600">
-                      R$ {metricas.previsaoRecebimento.toLocaleString('pt-BR')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
-                    <span>Próximo mês</span>
-                    <span className="font-bold text-blue-600">
-                      R$ {(metricas.previsaoRecebimento * 1.05).toLocaleString('pt-BR')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded">
-                    <span>Próximos 3 meses</span>
-                    <span className="font-bold text-purple-600">
-                      R$ {(metricas.previsaoRecebimento * 3.2).toLocaleString('pt-BR')}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Metas e Objetivos */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Metas e Objetivos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">Taxa de Inadimplência</span>
-                      <span className="text-sm">{metricas.taxaInadimplencia.toFixed(1)}% / 5%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-red-500 h-2 rounded-full" 
-                        style={{ width: `${Math.min((metricas.taxaInadimplencia / 5) * 100, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">Valor Recuperado</span>
-                      <span className="text-sm">
-                        R$ {metricas.valorRecuperado.toLocaleString('pt-BR')} / R$ {metricas.valorEmAtraso.toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full" 
-                        style={{ width: `${metricas.valorEmAtraso > 0 ? (metricas.valorRecuperado / metricas.valorEmAtraso) * 100 : 0}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">Receita Mensal</span>
-                      <span className="text-sm">
-                        R$ {metricas.valorTotalMensal.toLocaleString('pt-BR')} / R$ {(metricas.valorTotalMensal * 1.2).toLocaleString('pt-BR')}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-500 h-2 rounded-full" 
-                        style={{ width: `${(metricas.valorTotalMensal / (metricas.valorTotalMensal * 1.2)) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Alertas e Recomendações */}
           <Card>
-            <CardHeader>
-              <CardTitle>Alertas e Recomendações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {metricas.taxaInadimplencia > 15 && (
-                  <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
-                    <div>
-                      <h4 className="font-medium text-red-800">Taxa de inadimplência alta</h4>
-                      <p className="text-sm text-red-600">
-                        Considere revisar o processo de cobrança e implementar ações preventivas.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {tarefasVencidas.length > 5 && (
-                  <div className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded">
-                    <Clock className="h-5 w-5 text-orange-500" />
-                    <div>
-                      <h4 className="font-medium text-orange-800">Tarefas de cobrança vencidas</h4>
-                      <p className="text-sm text-orange-600">
-                        {tarefasVencidas.length} tarefas estão vencidas. Priorize a execução.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {clientesVencimentoProximo.length > 10 && (
-                  <div className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                    <Calendar className="h-5 w-5 text-yellow-500" />
-                    <div>
-                      <h4 className="font-medium text-yellow-800">Muitos vencimentos próximos</h4>
-                      <p className="text-sm text-yellow-600">
-                        {clientesVencimentoProximo.length} clientes vencem nos próximos 7 dias. Envie lembretes.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {metricas.valorRecuperado > metricas.valorEmAtraso * 0.5 && (
-                  <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    <div>
-                      <h4 className="font-medium text-green-800">Boa performance de recuperação</h4>
-                      <p className="text-sm text-green-600">
-                        Sua equipe está recuperando bem os valores em atraso. Continue assim!
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <CardContent className="p-8 text-center">
+              <Target className="h-16 w-16 mx-auto mb-4 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">Previsões Financeiras</h3>
+              <p className="text-muted-foreground mb-4">
+                Módulo de previsões e projeções financeiras em desenvolvimento.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
