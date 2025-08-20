@@ -132,6 +132,7 @@ export type Database = {
           id: string
           resultado: Json | null
           status: string | null
+          user_id: string | null
         }
         Insert: {
           automacao_id?: string | null
@@ -141,6 +142,7 @@ export type Database = {
           id?: string
           resultado?: Json | null
           status?: string | null
+          user_id?: string | null
         }
         Update: {
           automacao_id?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           id?: string
           resultado?: Json | null
           status?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -179,6 +182,7 @@ export type Database = {
           trigger_config: Json | null
           trigger_tipo: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           acoes?: Json | null
@@ -190,6 +194,7 @@ export type Database = {
           trigger_config?: Json | null
           trigger_tipo: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           acoes?: Json | null
@@ -201,6 +206,7 @@ export type Database = {
           trigger_config?: Json | null
           trigger_tipo?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -299,6 +305,7 @@ export type Database = {
           email: boolean | null
           horario_envio: string | null
           id: string
+          owner_id: string | null
           push: boolean | null
           sms: boolean | null
           tipo_notificacao: string
@@ -312,6 +319,7 @@ export type Database = {
           email?: boolean | null
           horario_envio?: string | null
           id?: string
+          owner_id?: string | null
           push?: boolean | null
           sms?: boolean | null
           tipo_notificacao: string
@@ -325,6 +333,7 @@ export type Database = {
           email?: boolean | null
           horario_envio?: string | null
           id?: string
+          owner_id?: string | null
           push?: boolean | null
           sms?: boolean | null
           tipo_notificacao?: string
@@ -345,6 +354,7 @@ export type Database = {
           id: string
           status: string | null
           template_id: string | null
+          user_id: string | null
         }
         Insert: {
           assunto: string
@@ -357,6 +367,7 @@ export type Database = {
           id?: string
           status?: string | null
           template_id?: string | null
+          user_id?: string | null
         }
         Update: {
           assunto?: string
@@ -369,6 +380,7 @@ export type Database = {
           id?: string
           status?: string | null
           template_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -397,6 +409,7 @@ export type Database = {
           id: string
           nome: string
           updated_at: string | null
+          user_id: string | null
           variaveis: string[] | null
         }
         Insert: {
@@ -408,6 +421,7 @@ export type Database = {
           id?: string
           nome: string
           updated_at?: string | null
+          user_id?: string | null
           variaveis?: string[] | null
         }
         Update: {
@@ -419,6 +433,7 @@ export type Database = {
           id?: string
           nome?: string
           updated_at?: string | null
+          user_id?: string | null
           variaveis?: string[] | null
         }
         Relationships: []
@@ -475,6 +490,7 @@ export type Database = {
           lida: boolean | null
           mensagem: string
           metadata: Json | null
+          owner_id: string | null
           prioridade: string | null
           tipo: string
           titulo: string
@@ -492,6 +508,7 @@ export type Database = {
           lida?: boolean | null
           mensagem: string
           metadata?: Json | null
+          owner_id?: string | null
           prioridade?: string | null
           tipo: string
           titulo: string
@@ -509,6 +526,7 @@ export type Database = {
           lida?: boolean | null
           mensagem?: string
           metadata?: Json | null
+          owner_id?: string | null
           prioridade?: string | null
           tipo?: string
           titulo?: string
@@ -567,6 +585,7 @@ export type Database = {
           tipo: string | null
           titulo: string
           updated_at: string | null
+          user_id: string | null
           usuario_responsavel: string | null
           valor_relacionado: number | null
         }
@@ -583,6 +602,7 @@ export type Database = {
           tipo?: string | null
           titulo: string
           updated_at?: string | null
+          user_id?: string | null
           usuario_responsavel?: string | null
           valor_relacionado?: number | null
         }
@@ -599,6 +619,7 @@ export type Database = {
           tipo?: string | null
           titulo?: string
           updated_at?: string | null
+          user_id?: string | null
           usuario_responsavel?: string | null
           valor_relacionado?: number | null
         }
@@ -643,6 +664,7 @@ export type Database = {
           status: string | null
           telefone: string
           template_usado: string | null
+          user_id: string | null
         }
         Insert: {
           cliente_id?: string | null
@@ -653,6 +675,7 @@ export type Database = {
           status?: string | null
           telefone: string
           template_usado?: string | null
+          user_id?: string | null
         }
         Update: {
           cliente_id?: string | null
@@ -663,6 +686,7 @@ export type Database = {
           status?: string | null
           telefone?: string
           template_usado?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {

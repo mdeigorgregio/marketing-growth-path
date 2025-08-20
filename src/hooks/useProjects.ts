@@ -57,7 +57,7 @@ export const useProjects = () => {
       }
       
       const { data, error } = await supabase
-        .from('projects')
+        .from('clientes')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -81,7 +81,7 @@ export const useProject = (projectId: string) => {
       if (!user) throw new Error('Usuário não autenticado');
       
       const { data, error } = await supabase
-        .from('projects')
+        .from('clientes')
         .select('*')
         .eq('id', projectId)
         .eq('user_id', user.id)
@@ -106,8 +106,8 @@ export const useCreateProject = () => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('projects')
-        .insert([{ ...projectData, user_id: user.id }])
+        .from('clientes')
+        .insert([{ ...clienteData, user_id: user.id }])
         .select()
         .single();
 
@@ -132,7 +132,7 @@ export const useUpdateProject = () => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { data, error } = await supabase
-        .from('projects')
+        .from('clientes')
         .update(updates)
         .eq('id', id)
         .eq('user_id', user.id)
@@ -160,9 +160,9 @@ export const useDeleteProject = () => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const { error } = await supabase
-        .from('projects')
+        .from('clientes')
         .delete()
-        .eq('id', projectId)
+        .eq('id', clienteId)
         .eq('user_id', user.id);
 
       if (error) throw error;

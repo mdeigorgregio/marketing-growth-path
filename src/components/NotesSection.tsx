@@ -22,12 +22,12 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [newTag, setNewTag] = useState('');
 
-  const { user } = useAuth();
   const { data: notes, isLoading } = useNotes(projectId);
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const filteredNotes = notes?.filter(note =>
     note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,10 +45,19 @@ export const NotesSection = ({ projectId }: NotesSectionProps) => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const noteData = {
         cliente_id: projectId,
-        user_id: user!.id,
+        user_id: user.id,
         title: newNote.title,
         content: newNote.content,
         tags: newNote.tags || [],

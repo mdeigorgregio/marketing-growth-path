@@ -130,7 +130,7 @@ export const WhatsAppButton = ({ cliente, variant = 'default', size = 'sm' }: Wh
 
   if (!cliente.telefone) {
     return (
-      <Button variant="ghost" size={size} disabled className="text-muted-foreground">
+      <Button variant="ghost" size="default" disabled className="text-muted-foreground">
         <MessageCircle className="w-4 h-4 mr-1" />
         Sem telefone
       </Button>
@@ -141,7 +141,7 @@ export const WhatsAppButton = ({ cliente, variant = 'default', size = 'sm' }: Wh
     <div className="flex items-center gap-2">
       <Button
         variant={variant}
-        size={size}
+          size="default"
         onClick={handleWhatsAppClick}
         disabled={isLoading}
         className="bg-green-600 hover:bg-green-700 text-white"

@@ -295,7 +295,7 @@ const ProjectDetailsModal = ({ project, isOpen, onClose }: ProjectDetailsModalPr
                         <Badge 
                           variant="outline" 
                           className={`${
-                            project.status_pagamento === 'Em Dia' 
+                            project.status_pagamento === 'Adimplente' 
                               ? 'bg-green-100 text-green-800 border-green-200'
                               : project.status_pagamento === 'Pendente'
                               ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
